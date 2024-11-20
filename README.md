@@ -9,5 +9,11 @@ Vá até o o link e baixe o dataset. Link: https://data.mendeley.com/datasets/zr
  
 Depois descompacte-o e adicione o 'metadata.csv' na pasta data.
 
-# Rodar o jupyter notebook:
+# Rodar o jupyter notebook para realizar a análise exploratória dos dados:
 Com o jupyter notebook instalado no ambiente conda, vá até a past 'src' e rode o script 'EDA.ipynb' por partes.
+
+# T-SNE
+Para realizar a análise sobre a separabilidade das imagens, você pode rodar o script 'src/tsne.py'.
+`python3 src/tsne.py`
+
+Mas antes é necessário adicionar o diretório das imagens a serem analisadas. Neste caso, recomenda-se que esteja dentro da pasta 'data'.
