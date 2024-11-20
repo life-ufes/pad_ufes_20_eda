@@ -3,7 +3,7 @@
 É recomendado criar um ambiente virtual:
 `conda create -n eda && conda activate eda`
 # Instalação das bibliotecas necessárias
-`pip3 install 'r requirements.txt`
+`pip3 install -r requirements.txt`
 # Baixe o dataset
 Vá até o o link e baixe o dataset. Link: https://data.mendeley.com/datasets/zr7vgbcyr2/1
  
