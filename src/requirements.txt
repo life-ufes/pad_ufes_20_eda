@@ -1,0 +1,5 @@
+matplotlib==3.7.5
+pandas==1.4.2
+numpy==1.24.4
+scikit-learn==1.1.1
+prince==0.14.0
