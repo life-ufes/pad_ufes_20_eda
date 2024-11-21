@@ -6,14 +6,17 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import torch
 from torchvision import models, transforms
-import utils
 from utils import plot_tsne
+from sklearn.utils import resample
+from collections import Counter
+from tqdm import tqdm
 
 class TSNE_PROCESS():
-    def __init__(self, folder_path, img_size=(112,112)):
+    def __init__(self, folder_path: str, img_size=(112,112), use_random_undersampling: bool = False):
         self.img_size=img_size
         self.folder_path=folder_path
-        
+        self.use_randomundersampling=use_random_undersampling
+
     def load_images_from_folder(self):
         ''' Função usada para carregar as imagens a serem por meio dos dados do 'metadata.csv' '''
         images = []
@@ -38,8 +41,46 @@ class TSNE_PROCESS():
             img = cv2.resize(img, self.img_size)  # Redimensiona para tamanho fixo
             images.append(img)
             labels.append(row["diagnostic"])  # Usa o diagnóstico como rótulo
-
+        
+        # Verificar se é para usar random undersampling ou não
+        if (self.use_randomundersampling is True):
+            # Balancear as classes
+            balanced_images, balanced_labels = self.random_undersampling(images, labels)
+            return balanced_images, balanced_labels
         return np.array(images), labels
+
+    def random_undersampling(self, images, labels):
+        balanced_images = []
+        balanced_labels = []
+
+        # Converter labels para array numpy para facilitar manipulação
+        labels = np.array(labels)
+
+        # Encontrar o número mínimo de amostras por classe
+        min_samples = min(Counter(labels).values())
+
+        for label in np.unique(labels):
+            # Obter índices das amostras da classe atual
+            class_indices = np.where(labels == label)[0]
+
+            # Realizar amostragem aleatória dentro da classe
+            sampled_indices = resample(
+                class_indices,
+                replace=False,
+                n_samples=min_samples,
+                random_state=42
+            )
+
+            # Adicionar imagens e rótulos balanceados
+            balanced_images.extend(images[i] for i in sampled_indices)
+            balanced_labels.extend(labels[i] for i in sampled_indices)
+
+        # Converter para arrays numpy
+        balanced_images = np.array(balanced_images)
+        balanced_labels = np.array(balanced_labels)
+
+        return balanced_images, balanced_labels
+
 
 
     def extract_features(self, images):
@@ -78,17 +119,17 @@ class TSNE_PROCESS():
 if __name__ == "__main__":
     ''' Execução do pipeline dos processos a serem executados '''
     # Caminho para o dataset
-    folder_path = "/home/wytcor/PROJECTs/mestrado-ufes/lab-life/datasets/zr7vgbcyr2-1" # Pode estar em /data
-    img_size= (112,112) # Shape das imagens
+    folder_path = "/home/wytcor/PROJECTs/mestrado-ufes/lab-life/datasets/zr7vgbcyr2-1" # Pode estar em '/data'
+    img_size = (112, 112) # Shape das imagens
     
     # Instanciar o novo processo a do TSNE
-    tsne_process=TSNE_PROCESS(folder_path, img_size)
+    tsne_process = TSNE_PROCESS(folder_path, img_size, use_random_undersampling=False)
     
-    # Carregar imagens e rótulos
+    # Carregar imagens e dos labels
     images, labels = tsne_process.load_images_from_folder()
-
-    # Extrair features usando ResNet18
-    print("Extraindo features das imagens...")
+    
+    # Extrair features usando ResNet50. O extrator de features por ser mudado
+    print("Extraindo features das imagens ...")
     features = tsne_process.extract_features(images)
 
     # Aplicar t-SNE para redução de dimensionalidade
@@ -98,5 +139,5 @@ if __name__ == "__main__":
 
     # Plotar os resultados
     print("Plotando resultados...")
-    plot_tsne.plot_tsne(images_tsne, labels, tsne_image_folder_path="./src/results/tsne_resnet50.png")
+    plot_tsne.plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE - original data", tsne_image_folder_path="./src/results/tsne_resnet50.png")
 
