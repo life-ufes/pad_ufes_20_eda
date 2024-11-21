@@ -18,3 +18,6 @@ Para realizar a análise sobre a separabilidade das imagens, você pode rodar o 
 `python3 src/tsne.py`
 
 Mas antes é necessário adicionar o diretório das imagens a serem analisadas. Neste caso, recomenda-se que esteja dentro da pasta 'data'.
+
+# Feature selection
+Para realizar a seleção de features basta rodar as células do 'src/FeatureSelection.ipynb'. Entretando, mude o diretório de origem dos dados 'filepath_or_buffer' da variável 'dataset' (primeira célula).
