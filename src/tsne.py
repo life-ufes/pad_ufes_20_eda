@@ -44,8 +44,8 @@ class TSNE_PROCESS():
 
     def extract_features(self, images):
         '''Função para extrair features usando diferentes modelos'''
-        # Inicializar o modelo ResNet18 pré-treinado
-        model = models.resnet18(pretrained=True)
+        # Inicializar o modelo ResNet50 pré-treinado
+        model = models.resnet50(pretrained=True)
         model = torch.nn.Sequential(*list(model.children())[:-1])  # Remove a última camada FC
         model.eval()
 
@@ -98,4 +98,5 @@ if __name__ == "__main__":
 
     # Plotar os resultados
     print("Plotando resultados...")
-    plot_tsne.plot_tsne(images_tsne, labels)
+    plot_tsne.plot_tsne(images_tsne, labels, tsne_image_folder_path="./src/results/tsne_resnet50.png")
+
