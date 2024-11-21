@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import torch
 from torchvision import models, transforms
@@ -24,24 +23,31 @@ class TSNE_PROCESS():
         csv_path = os.path.join(self.folder_path, 'metadata.csv')  # Caminho para o CSV
         dataset_dataframe = pd.read_csv(csv_path, sep=",")  # Carrega o CSV
 
-        for _, row in dataset_dataframe.iterrows():  # Iterar pelas linhas do DataFrame
-            file_name = row["img_id"]  # Nome do arquivo
-            img_path = os.path.join(os.path.join(self.folder_path, 'images'), file_name)
-            print(img_path)
-            if not os.path.isfile(img_path):
-                print(f"Arquivo não encontrado: {file_name}")
-                continue
+        # Obter a quantidade amostras dos pacientes
+        total_samples = len(dataset_dataframe)
 
-            img = cv2.imread(img_path)
-            if img is None:
-                print(f"Erro ao carregar imagem: {file_name}")
-                continue
+        # Realiza o efeito de barra ao iterar cada amostra
+        with tqdm(total=total_samples, desc="Carregando imagens") as pbar:
+            for _, row in dataset_dataframe.iterrows():  # Iterar pelas linhas do DataFrame
+                file_name = row["img_id"]  # Nome do arquivo
+                img_path = os.path.join(os.path.join(self.folder_path, 'images'), file_name)
+                if not os.path.isfile(img_path): # Verificar se o arquivo existe
+                    print(f"Arquivo não encontrado: {file_name}")
+                    continue
 
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Converte para RGB
-            img = cv2.resize(img, self.img_size)  # Redimensiona para tamanho fixo
-            images.append(img)
-            labels.append(row["diagnostic"])  # Usa o diagnóstico como rótulo
-        
+                img = cv2.imread(img_path)
+                if img is None:
+                    print(f"Erro ao carregar imagem: {file_name}")
+                    continue
+
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Converte para RGB
+                img = cv2.resize(img, self.img_size)  # Redimensiona para tamanho fixo
+                images.append(img)
+                labels.append(row["diagnostic"])  # Usa o diagnóstico como rótulo
+                
+                # Adiciona um ao range da barra
+                pbar.update(1)
+
         # Verificar se é para usar random undersampling ou não
         if (self.use_randomundersampling is True):
             # Balancear as classes
@@ -95,7 +101,7 @@ class TSNE_PROCESS():
             transforms.ToPILImage(),
             transforms.Resize((112, 112)),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalização para ResNet
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
         # Pré-processar e extrair features
@@ -123,7 +129,7 @@ if __name__ == "__main__":
     img_size = (112, 112) # Shape das imagens
     
     # Instanciar o novo processo a do TSNE
-    tsne_process = TSNE_PROCESS(folder_path, img_size, use_random_undersampling=False)
+    tsne_process = TSNE_PROCESS(folder_path, img_size, use_random_undersampling=True)
     
     # Carregar imagens e dos labels
     images, labels = tsne_process.load_images_from_folder()
@@ -139,5 +145,5 @@ if __name__ == "__main__":
 
     # Plotar os resultados
     print("Plotando resultados...")
-    plot_tsne.plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE - original data", tsne_image_folder_path="./src/results/tsne_resnet50.png")
+    plot_tsne.plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE - randomUnderSampling", tsne_image_folder_path="./src/results/tsne_resnet50.png")
 
