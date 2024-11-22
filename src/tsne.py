@@ -125,8 +125,8 @@ class TSNE_PROCESS():
 if __name__ == "__main__":
     ''' Execução do pipeline dos processos a serem executados '''
     # Caminho para o dataset
-    folder_path = "/home/wytcor/PROJECTs/mestrado-ufes/lab-life/datasets/zr7vgbcyr2-1" # Pode estar em '/data'
-    img_size = (112, 112) # Shape das imagens
+    folder_path = "../data" # Pode estar em '/data'
+    img_size = (224, 224) # Shape das imagens
     
     # Instanciar o novo processo a do TSNE
     tsne_process = TSNE_PROCESS(folder_path, img_size, use_random_undersampling=True)
@@ -145,5 +145,5 @@ if __name__ == "__main__":
 
     # Plotar os resultados
     print("Plotando resultados...")
-    plot_tsne.plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE - randomUnderSampling", tsne_image_folder_path="./src/results/tsne_resnet50.png")
+    plot_tsne.plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE - randomUnderSampling", tsne_image_folder_path="./src/results/tsne_resnet50_image_size_224x224.png")
 
