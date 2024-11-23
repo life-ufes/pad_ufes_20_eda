@@ -5,3 +5,5 @@ scikit-learn==1.5.2
 prince==0.14.0
 tqdm
 shap==0.41.0
+umap-learn==0.5.2
+numba==0.58.1

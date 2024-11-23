@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE", tsne_image_folder_path="./src/results/tsne_resnet18.png"):
+def plot_projection(images_tsne, labels, title="Visualização das Imagens com t-SNE", image_folder_path_name="./src/results/tsne_resnet18.png"):
     plt.figure(figsize=(10, 8))
     unique_labels = list(set(labels))
     colors = plt.cm.tab10(np.linspace(0, 1, len(unique_labels)))
@@ -24,5 +24,5 @@ def plot_tsne(images_tsne, labels, title="Visualização das Imagens com t-SNE",
     plt.ylabel("Dimensão 2")
     plt.legend(loc="best", bbox_to_anchor=(1.05, 1), fontsize='small')
     plt.tight_layout()
-    plt.savefig(tsne_image_folder_path)
+    plt.savefig(image_folder_path_name)
     plt.show()

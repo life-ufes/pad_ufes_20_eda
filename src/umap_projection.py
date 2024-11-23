@@ -2,15 +2,15 @@ import numpy as np
 import cv2
 import os
 import pandas as pd
-from sklearn.manifold import TSNE
 import torch
 from torchvision import models, transforms
 from utils import plots
 from sklearn.utils import resample
 from collections import Counter
 from tqdm import tqdm
+import umap.umap_ as umap
 
-class TSNE_PROCESS():
+class UMAP_PROCESS():
     def __init__(self, folder_path: str, img_size=(112,112), use_random_undersampling: bool = False):
         self.img_size=img_size
         self.folder_path=folder_path
@@ -99,7 +99,7 @@ class TSNE_PROCESS():
         # Transformações compatíveis com ResNet
         transform = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Resize((112, 112)),
+            transforms.Resize(self.img_size),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
@@ -125,25 +125,26 @@ class TSNE_PROCESS():
 if __name__ == "__main__":
     ''' Execução do pipeline dos processos a serem executados '''
     # Caminho para o dataset
-    folder_path = "../data" # Pode estar em '/data'
-    img_size = (224, 224) # Shape das imagens
+    folder_path = "/home/wytcor/PROJECTs/mestrado-ufes/lab-life/EDA_pad_ufes_20/data" # Pode estar em '/data'
+    img_size = (112, 112)
     
-    # Instanciar o novo processo a do TSNE
-    tsne_process = TSNE_PROCESS(folder_path, img_size, use_random_undersampling=True)
-    
-    # Carregar imagens e dos labels
-    images, labels = tsne_process.load_images_from_folder()
-    
-    # Extrair features usando ResNet50. O extrator de features por ser mudado
-    print("Extraindo features das imagens ...")
-    features = tsne_process.extract_features(images)
+       # Criar instância do pipeline UMAP_PROCESS
+    pipeline = UMAP_PROCESS(folder_path, img_size, use_random_undersampling=False)
 
-    # Aplicar t-SNE para redução de dimensionalidade
-    print("Aplicando t-SNE...")
-    tsne = TSNE(n_components=2, random_state=42)
-    images_tsne = tsne.fit_transform(features)
+    
+    images, labels = pipeline.load_images_from_folder() # Carregar imagens e rótulos
+    labels=np.array(labels)
+    print(f"Imagens carregadas: {len(images)}, Labels: {len(labels)}")
 
+    # Extrair features das imagens
+    features = pipeline.extract_features(images)
+    print(f"Features extraídas: {features.shape}")
+
+    # Processamento adicional (como UMAP) pode ser inserido aqui
+    umap_reducer = umap.UMAP()
+    reduced_features = umap_reducer.fit_transform(features)
+    print(f"Dimensões reduzidas: {reduced_features.shape}")    
     # Plotar os resultados
     print("Plotando resultados...")
-    plots.plot_projection(images_tsne, labels, title="Visualização das Imagens com t-SNE - randomUnderSampling", image_folder_path_name="./src/results/tsne_resnet50_image_size_224x224.png")
+    plots.plot_projection(reduced_features, labels, title="Visualização das Imagens com umap - original data", image_folder_path_name=f"./src/results/umap_resnet50_image_size_{img_size}.png")
 
