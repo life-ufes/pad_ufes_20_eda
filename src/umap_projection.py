@@ -2,8 +2,7 @@ import numpy as np
 import cv2
 import os
 import pandas as pd
-import torch
-from torchvision import models, transforms
+from models import RESNET18_FEATURE_EXTRACTOR, RESNET50_FEATURE_EXTRACTOR
 from utils import plots
 from sklearn.utils import resample
 from collections import Counter
@@ -87,40 +86,6 @@ class UMAP_PROCESS():
 
         return balanced_images, balanced_labels
 
-
-
-    def extract_features(self, images):
-        '''Função para extrair features usando diferentes modelos'''
-        # Inicializar o modelo ResNet50 pré-treinado
-        model = models.resnet50(pretrained=True)
-        model = torch.nn.Sequential(*list(model.children())[:-1])  # Remove a última camada FC
-        model.eval()
-
-        # Transformações compatíveis com ResNet
-        transform = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize(self.img_size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-
-        # Pré-processar e extrair features
-        processed_images = []
-        for img in images:
-            try:
-                processed_images.append(transform(img))
-            except Exception as e:
-                print(f"Erro ao transformar imagem: {e}")
-                continue
-
-        if len(processed_images) == 0:
-            raise ValueError("Nenhuma imagem foi transformada com sucesso. Verifique as imagens de entrada.")
-
-        with torch.no_grad():
-            images_tensor = torch.stack(processed_images)  # Empilha imagens em um tensor
-            features = model(images_tensor).squeeze(-1).squeeze(-1)  # Obtém as features
-        return features.numpy()
-
 # Bloco principal
 if __name__ == "__main__":
     ''' Execução do pipeline dos processos a serem executados '''
@@ -137,7 +102,8 @@ if __name__ == "__main__":
     print(f"Imagens carregadas: {len(images)}, Labels: {len(labels)}")
 
     # Extrair features das imagens
-    features = pipeline.extract_features(images)
+    print("Extraindo features das imagens ...")
+    features = RESNET18_FEATURE_EXTRACTOR.extract_features(images, img_size)
     print(f"Features extraídas: {features.shape}")
 
     # Processamento adicional (como UMAP) pode ser inserido aqui
