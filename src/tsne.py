@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from sklearn.manifold import TSNE
 from utils import plots
-from models import RESNET18_FEATURE_EXTRACTOR, RESNET50_FEATURE_EXTRACTOR
+from models import RESNET18_FEATURE_EXTRACTOR, RESNET50_FEATURE_EXTRACTOR, CLIP_IMAGE_FEATURE_EXTRACTOR
 from sklearn.utils import resample
 from collections import Counter
 from tqdm import tqdm
@@ -86,22 +86,38 @@ class TSNE_PROCESS():
 
         return balanced_images, balanced_labels
 
+    def extract_features(self, extractor_name="resnet18", images=None):
+        if images is None:
+            raise ValueError("As imagens não foram passadas para o extrator de features!")
+
+        valid_extractors = ["clip-vit-patch-32", "resnet18", "resnet50"]
+        if extractor_name not in valid_extractors:
+            raise ValueError(f"Nome do extrator inválido! Escolha entre {valid_extractors}")
+
+        if extractor_name == "clip-vit-patch-32":
+            return CLIP_IMAGE_FEATURE_EXTRACTOR.extract_features(images, self.img_size)
+        elif extractor_name == "resnet18":
+            return RESNET18_FEATURE_EXTRACTOR.extract_features(images, self.img_size)
+        elif extractor_name == "resnet50":
+            return RESNET50_FEATURE_EXTRACTOR.extract_features(images, self.img_size)
+
 # Bloco principal
 if __name__ == "__main__":
     ''' Execução do pipeline dos processos a serem executados '''
     # Caminho para o dataset
     folder_path = "./data" # Pode estar em '/data'
     img_size = (112, 112) # Shape das imagens
-    
+    feat_model_name="resnet18" # Modelo desejado para extrair as features
+
     # Instanciar o novo processo a do TSNE
     tsne_process = TSNE_PROCESS(folder_path, img_size, use_random_undersampling=False)
     
     # Carregar imagens e dos labels
     images, labels = tsne_process.load_images_from_folder()
     
-    # Extrair features usando ResNet50. O extrator de features por ser mudado
+    # Extrair features usando CLIP encder. O extrator de features por ser mudado
     print("Extraindo features das imagens ...")
-    features = RESNET18_FEATURE_EXTRACTOR.extract_features(images, img_size)
+    features = tsne_process.extract_features(extractor_name=feat_model_name, images=images)
 
     # Aplicar t-SNE para redução de dimensionalidade
     print("Aplicando t-SNE...")
@@ -110,5 +126,5 @@ if __name__ == "__main__":
 
     # Plotar os resultados
     print("Plotando resultados...")
-    plots.plot_projection(images_tsne, labels, title="Visualização das Imagens com t-SNE - randomUnderSampling", image_folder_path_name="./src/results/tsne_resnet50_image_size_224x224.png")
+    plots.plot_projection(images_tsne, labels, title=f"Visualização das Imagens com {feat_model_name}", image_folder_path_name=f"./src/results/tsne_{feat_model_name}_image_size_{img_size}.png")
 

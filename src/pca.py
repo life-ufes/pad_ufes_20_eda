@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import os
 import pandas as pd
-from models import RESNET18_FEATURE_EXTRACTOR, RESNET50_FEATURE_EXTRACTOR
+from models import RESNET18_FEATURE_EXTRACTOR, RESNET50_FEATURE_EXTRACTOR, CLIP_IMAGE_FEATURE_EXTRACTOR
 from utils import plots
 from sklearn.utils import resample
 from sklearn.decomposition import PCA
@@ -86,6 +86,21 @@ class PCA_PROCESS():
         balanced_labels = np.array(balanced_labels)
 
         return balanced_images, balanced_labels
+    
+    def extract_features(self, extractor_name="resnet18", images=None):
+        if images is None:
+            raise ValueError("As imagens não foram passadas para o extrator de features!")
+
+        valid_extractors = ["clip-vit-patch-32", "resnet18", "resnet50"]
+        if extractor_name not in valid_extractors:
+            raise ValueError(f"Nome do extrator inválido! Escolha entre {valid_extractors}")
+
+        if extractor_name == "clip-vit-patch-32":
+            return CLIP_IMAGE_FEATURE_EXTRACTOR.extract_features(images, self.img_size)
+        elif extractor_name == "resnet18":
+            return RESNET18_FEATURE_EXTRACTOR.extract_features(images, self.img_size)
+        elif extractor_name == "resnet50":
+            return RESNET50_FEATURE_EXTRACTOR.extract_features(images, self.img_size)
 
 # Bloco principal
 if __name__ == "__main__":
@@ -93,8 +108,10 @@ if __name__ == "__main__":
     # Caminho para o dataset
     folder_path = "/home/wytcor/PROJECTs/mestrado-ufes/lab-life/EDA_pad_ufes_20/data" # Pode estar em '/data'
     img_size = (112, 112)
+    feat_model_name="clip-vit-base-patch32" # Modelo desejado para extrair as features
     
-    pipeline = PCA_PROCESS(folder_path, img_size, use_random_undersampling=False)
+    # Instanciar o processo do PCA
+    pipeline = PCA_PROCESS(folder_path, img_size, use_random_undersampling=True)
     
     images, labels = pipeline.load_images_from_folder() # Carregar imagens e rótulos
     labels=np.array(labels)
@@ -102,7 +119,7 @@ if __name__ == "__main__":
 
     # Extrair features das imagens
     print("Extraindo features das imagens ...")
-    features = RESNET18_FEATURE_EXTRACTOR.extract_features(images, img_size)
+    features = pipeline.extract_features(extractor_name=feat_model_name, images=images)
     print(f"Features extraídas: {features.shape}")
 
     # Processamento e redução da dimensionalidade dos vetores em composentes
@@ -111,5 +128,5 @@ if __name__ == "__main__":
     print(f"Dimensões reduzidas: {reduced_features.shape}")    
     # Plotar os resultados
     print("Plotando resultados...")
-    plots.plot_projection(reduced_features, labels, title="Visualização das Imagens com PCA - original data", image_folder_path_name=f"./src/results/pca_resnet50_image_size_{img_size}.png")
+    plots.plot_projection(reduced_features, labels, title=f"Visualização das Imagens com PCA - original data - {feat_model_name} - randomsampling", image_folder_path_name=f"./src/results/pca_{feat_model_name}_image_size_{img_size}_randomsampling.png")
 
