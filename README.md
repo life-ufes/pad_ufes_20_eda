@@ -1,4 +1,3 @@
-# pad_ufes_20_eda
 # Conda enviroment 
 É recomendado criar um ambiente virtual:
 `conda create -n eda && conda activate eda`
