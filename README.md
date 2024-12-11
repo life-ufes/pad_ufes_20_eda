@@ -32,3 +32,7 @@ Mas antes é necessário adicionar o diretório das imagens a serem analisadas. 
 
 # Feature selection
 Para realizar a seleção de features basta rodar as células do 'src/FeatureSelection.ipynb'. Entretando, mude o diretório de origem dos dados 'filepath_or_buffer' da variável 'dataset' (primeira célula).
+
+
+# Selecção de features por Bayers
+Link repositório original: https://github.com/peuBouzon/pad-ufes-20-baeysian-networks.git
