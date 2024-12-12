@@ -110,13 +110,14 @@ class MODEL_INFERENCE():
             # Salvar o valor da predição
             self.write_csv_file(prediction=prediction_category, probability=prediction_category_probability, image_name=image_name)
 
-
 if __name__=="__main__":
     pipeline = MODEL_INFERENCE(
-        model_name="1-mobilenet.onnx",  # Caminho para o arquivo ONNX
-        metadata_csv_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/metadata.csv", 
-        images_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/images", 
-        model_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobile-net-cv-p5/1-mobilenet.onnx", 
-        csv_results_folder_destination="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/"
+        model_name="1-mobilenet.onnx",  # Nome do modelo
+        metadata_csv_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/metadata.csv", # Caminho de onde está o metadado
+        images_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/images",  # Pasta com as imagens do dataset
+        model_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobile-net-cv-p5/1-mobilenet.onnx", # Caminho do modelo a ser usado
+        csv_results_folder_destination="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/" # Onde o arquivo com os resultados das inferências será salvo
     )
     pipeline.process_image()
+
+    

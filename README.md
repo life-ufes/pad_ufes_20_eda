@@ -36,3 +36,15 @@ Para realizar a seleção de features basta rodar as células do 'src/FeatureSel
 
 # Selecção de features por Bayers
 Link repositório original: https://github.com/peuBouzon/pad-ufes-20-baeysian-networks.git
+
+
+# Obter as probabilidades da inferência de um modelo de CNN:
+Parâmetros: 
+    - model_name # Nome do modelo
+    - metadata_csv_folder_path # Caminho de onde está o metadado
+    - images_folder_path # Pasta com as imagens do dataset
+    - model_folder_path # Caminho do modelo a ser usado
+    - csv_results_folder_destination # Onde o arquivo com os resultados das inferências será salvo
+
+Após realizar as alterações rode o arquivo 'inference_image_classifier.py'. No final do processo, um arquivo final 'src/results/inference-results' com um arquivo 'modelo_usado.csv'.
+
