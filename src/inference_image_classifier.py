@@ -72,14 +72,16 @@ class MODEL_INFERENCE():
                 ort_outs = self.model.run(None, ort_inputs)  # Realizar a inferência com o ONNX Runtime
                 
                 prediction_probabilities = F.softmax(torch.from_numpy(ort_outs[0]), dim=1).numpy()[0]
-                prediction =  np.argmax(prediction_probabilities) # Classe predita
-                prediction_prob = np.max(prediction_probabilities) # Probabilidade da predição
-                return prediction, prediction_prob
+                # prediction =  np.argmax(prediction_probabilities) # Classe predita
+                # prediction_prob = np.max(prediction_probabilities) # Probabilidade da predição
+                # return prediction, prediction_prob
+                return prediction_probabilities
             # Caso não seja (pth/pt, por exemplo)
             prediction_probabilities = test_single_input(self.model, self.image_transformations(), image, meta_data=None, apply_softmax=True)
-            prediction =  np.argmax(prediction_probabilities) # Classe predita
-            prediction_prob = np.max(prediction_probabilities) # Probabilidade da predição
-            return prediction, prediction_prob
+            # prediction =  np.argmax(prediction_probabilities) # Classe predita
+            # prediction_prob = np.max(prediction_probabilities) # Probabilidade da predição
+            # return prediction, prediction_prob
+            return prediction_probabilities
         
         except Exception as e:
             logging.error(f"Erro ao realizar a inferência: {e}")
@@ -110,27 +112,35 @@ class MODEL_INFERENCE():
                 ])
         return transform
     
-    def write_csv_file(self, prediction, probability, image_name):
+    def write_csv_file(self, image_name, prediction_probabilities):
         try:
             # Criar ou carregar o DataFrame
             result_file_path = os.path.join(self.csv_results_folder_destination, f"inference_model_{self.model_name}.csv")
+            
             if not os.path.exists(result_file_path):
-                df = pd.DataFrame(columns=['modelo_name', 'prediction', 'prediction_prob', 'img_id'])
+                df = pd.DataFrame(columns=['modelo_name', 'img_id', f'class_name_{self.class_names[0]}', f'class_name_{self.class_names[1]}', f'class_name_{self.class_names[2]}', f'class_name_{self.class_names[3]}', f'class_name_{self.class_names[4]}', f'class_name_{self.class_names[5]}'])
             else:
                 df = pd.read_csv(result_file_path)
 
-            # Criar um DataFrame com a nova linha
-            new_data = pd.DataFrame([{'modelo_name': self.model_name, 'prediction': prediction, 'prediction_prob': probability, 'img_id': image_name}])
-            
-            # Usar concatenação ao invés de append
-            df = pd.concat([df, new_data], ignore_index=True)
-            
+            # Criar as linhas para salvar no CSV, uma por classe com o nome e probabilidade
+            new_rows = []  # Lista para armazenar as novas linhas
+            #for class_name, prob in zip(self.class_names, prediction_probabilities):
+            # Criar a linha com a predição e probabilidade
+            new_rows.append({'modelo_name': str(self.model_name), 'img_id': image_name, f'class_name_{self.class_names[0]}': prediction_probabilities[0], f'class_name_{self.class_names[1]}': prediction_probabilities[1], f'class_name_{self.class_names[2]}': prediction_probabilities[2], f'class_name_{self.class_names[3]}': prediction_probabilities[3], f'class_name_{self.class_names[4]}': prediction_probabilities[4], f'class_name_{self.class_names[5]}': prediction_probabilities[5]})
+
+            # Concatenar as novas linhas ao DataFrame existente
+            new_rows_df = pd.DataFrame(new_rows)  # Converte as novas linhas em um DataFrame
+            df = pd.concat([df, new_rows_df], ignore_index=True)
+
+            # Salvar no CSV
             df.to_csv(result_file_path, index=False)
-            logging.info(f"Dados salvos com sucesso para a imagem {image_name}!")
+            print(f"Dados salvos com sucesso para a imagem {image_name}!")
             return True
         except Exception as e:
-            logging.error(f"Erro ao salvar os dados: {e}")
+            print(f"Erro ao salvar os dados: {e}")
             return False
+
+
         
     def read_csv(self):
         # Ler o arquivo CSV de metadados
@@ -140,18 +150,43 @@ class MODEL_INFERENCE():
     def process_image(self):
         dataset =  self.read_csv()
 
+        # Caso já exista um dataset de predições, ignorar o processamento
+        prediction_file_path = f"{self.csv_results_folder_destination}/inference_model_{self.model_name}.csv"
+        if os.path.exists(prediction_file_path):
+            return 
+        
         for image_name in dataset['img_id']:
             loaded_image = self.get_images(image_name)
             
             if loaded_image is None:
                 continue  # Pular se a imagem não for carregada
+            
 
             # Inferência das imagens
             with torch.no_grad():
-                prediction_category, prediction_category_probability = self.inference(loaded_image)
-            print(f"Imagem: {image_name}, Predição: {prediction_category} e Probabilidade:{prediction_category_probability}")
-            # Salvar o valor da predição
-            self.write_csv_file(prediction=prediction_category, probability=prediction_category_probability, image_name=image_name)
+                # prediction_category, prediction_category_probability = self.inference(loaded_image)
+                prediction_probabilities = self.inference(loaded_image)
+            self.write_csv_file(image_name=image_name, prediction_probabilities=prediction_probabilities[0])
+
+    def concat_dataset(self):
+        try:
+            # Carregar os datasets
+            metadata_dataset = pd.read_csv(self.metadata_csv_folder_path, sep=",")
+            predictions_dataset = pd.read_csv(os.path.join(self.csv_results_folder_destination, f"inference_model_{self.model_name}.csv"), sep=",")
+
+            # Realizar o merge usando a coluna 'img_id' como chave
+            result = pd.merge(metadata_dataset, predictions_dataset, on='img_id', how='inner')
+
+            # Salvar o dataset concatenado
+            merged_file_path = os.path.join(self.csv_results_folder_destination, "merged_metadata.csv")
+            result.to_csv(merged_file_path, index=False)
+            print(f"Dados concatenados e salvos em {merged_file_path}")
+            return merged_file_path
+        
+        except Exception as e:
+            print(f"Erro ao concatenar os datasets: {e}")
+
+
 
 if __name__=="__main__":
     pipeline = MODEL_INFERENCE(
@@ -164,6 +199,9 @@ if __name__=="__main__":
         model_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/resnet-50_None_folder_1_1734101683121366/best-checkpoint/best-checkpoint.pth", #"/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobile-net-cv-p5/1-mobilenet.onnx", # Caminho do modelo a ser usado
         csv_results_folder_destination="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/" # Onde o arquivo com os resultados das inferências será salvo
     )
-    pipeline.process_image()
+    # Processamento das imagens
+    ## pipeline.process_image()
+    # Concatenar os datasets
+    pipeline.concat_dataset()
 
     
