@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import pandas as pd
-import torch
 from torchvision import models, transforms
 
 def extract_features(images, img_size=(224,224)):

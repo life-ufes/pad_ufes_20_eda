@@ -48,3 +48,11 @@ Parâmetros:
 
 Após realizar as alterações rode o arquivo 'inference_image_classifier.py'. No final do processo, um arquivo final 'src/results/inference-results' com um arquivo 'modelo_usado.csv'.
 
+# Raug
+Biblioteca para obter as inferências dos modelos. Antes de rodar o script 'inference_image_classifier.py', é necessário criar uma pasta com o nome 'config.json' com o caminho da pasta a ser redirecionada na partição central. No caso, o do raug. Exemplo:
+
+{
+    "raug_full_path":"../raug"
+}
+
+
