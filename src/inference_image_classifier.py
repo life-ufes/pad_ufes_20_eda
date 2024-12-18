@@ -23,7 +23,7 @@ from PIL import Image
 import numpy as np
 
 class MODEL_INFERENCE():
-    def __init__(self, model_name, model_format_type, size_image, class_names, metadata_csv_folder_path, images_folder_path, model_folder_path, csv_results_folder_destination):
+    def __init__(self, model_name, model_format_type, size_image, class_names, metadata_csv_folder_path, images_folder_path, model_folder_path, csv_results_folder_destination, csv_results_train_and_test_data):
         self.model_name = model_name
         self.initial_model_format = model_format_type
         self.model_folder_path = model_folder_path
@@ -33,6 +33,7 @@ class MODEL_INFERENCE():
         self.metadata_csv_folder_path = metadata_csv_folder_path
         self.images_folder_path = images_folder_path
         self.csv_results_folder_destination = csv_results_folder_destination
+        self.csv_results_train_and_test_data = csv_results_train_and_test_data
         self.class_names=class_names
         
     def load_model(self):
@@ -168,6 +169,24 @@ class MODEL_INFERENCE():
                 prediction_probabilities = self.inference(loaded_image)
             self.write_csv_file(image_name=image_name, prediction_probabilities=prediction_probabilities[0])
 
+    def treat_one_hot_encoded(self, validation_folder_number=1):
+        ''' Sinalizar qual o dataset foi usado como treino e validação do modelo em análise '''
+        try:
+            # Leitura do CSV
+            dataset_pad_20_one_hot_encoded = pd.read_csv(self.csv_results_train_and_test_data, sep=",")
+            print(dataset_pad_20_one_hot_encoded[["img_id", "folder"]])
+
+            # Criação da coluna 'train'
+            dataset_pad_20_one_hot_encoded["train"] = dataset_pad_20_one_hot_encoded["folder"] != validation_folder_number
+            
+            # Depois de separar os dados, drope a coluna "folder"
+            dataset_pad_20_one_hot_encoded = dataset_pad_20_one_hot_encoded.drop(columns=["folder"])
+            # Exibindo os dados
+            return dataset_pad_20_one_hot_encoded[["img_id", "train"]]
+
+        except Exception as e:
+            print(f"Erro ao processar os dados da tabela um hot encoded. Error: {e}\n")
+
     def concat_dataset(self):
         try:
             # Carregar os datasets
@@ -177,9 +196,15 @@ class MODEL_INFERENCE():
             # Realizar o merge usando a coluna 'img_id' como chave
             result = pd.merge(metadata_dataset, predictions_dataset, on='img_id', how='inner')
 
+            # Obter os dados a serem 
+            dataset_pad_20_one_hot_encoded_result = self.treat_one_hot_encoded()
+
+            # Novo merge com o dataset dos dados a serem 
+            final_result = pd.merge(result, dataset_pad_20_one_hot_encoded_result, on="img_id", how="inner")
+
             # Salvar o dataset concatenado
             merged_file_path = os.path.join(self.csv_results_folder_destination, "merged_metadata.csv")
-            result.to_csv(merged_file_path, index=False)
+            final_result.to_csv(merged_file_path, index=False)
             print(f"Dados concatenados e salvos em {merged_file_path}")
             return merged_file_path
         
@@ -197,11 +222,13 @@ if __name__=="__main__":
         metadata_csv_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/metadata.csv", # Caminho de onde está o metadado
         images_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/images",  # Pasta com as imagens do dataset
         model_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/resnet-50_None_folder_1_1734101683121366/best-checkpoint/best-checkpoint.pth", #"/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobile-net-cv-p5/1-mobilenet.onnx", # Caminho do modelo a ser usado
-        csv_results_folder_destination="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/" # Onde o arquivo com os resultados das inferências será salvo
+        csv_results_folder_destination="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/", # Onde o arquivo com os resultados das inferências será salvo
+        csv_results_train_and_test_data = "/home/wyctor/PROJETOS/pad_ufes_20_eda/data/pad-ufes-20_folders_one_hot.csv"
     )
     # Processamento das imagens
     ## pipeline.process_image()
     # Concatenar os datasets
     pipeline.concat_dataset()
+    #pipeline.treat_one_hot_encoded()
 
     
