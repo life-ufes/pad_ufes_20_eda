@@ -7,11 +7,15 @@ from sklearn.metrics import classification_report, accuracy_score
 import numpy as np
 
 def main(dataset, features_to_be_removed, target):
+    # Dropar dados onde "train" é true
+    dataset = dataset[dataset["train"] != True]
+    
     feature_columns = [col for col in dataset.columns if col not in features_to_be_removed]
 
     # Identify categorical and numerical columns
     categorical_columns = dataset[feature_columns].select_dtypes(include=["object"]).columns
     numerical_columns = dataset[feature_columns].select_dtypes(include=["number"]).columns
+    
 
     # Apply one-hot encoding to categorical columns
     features_encoded = pd.get_dummies(dataset[feature_columns], columns=categorical_columns, drop_first=True)
@@ -47,10 +51,10 @@ def main(dataset, features_to_be_removed, target):
 
 if __name__=="__main__":
     # Load the dataset
-    file_path = '/home/wytcor/PROJECTs/mestrado-ufes/lab-life/EDA_pad_ufes_20/data/merged_metadata.csv'
+    file_path = '/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/merged_metadata.csv'
     dataset = pd.read_csv(file_path)
     # Features a serem desconsideradas
     # Definir qual a feature a ser predita e quais não serão usadas
     target_column = "diagnostic"
-    features_to_be_removed=["patient_id", "lesion_id", "img_id" , "modelo_name", "class_name_ACK" , "class_name_BCC", "class_name_MEL", "class_name_NEV", "class_name_SCC", "class_name_SEK", target_column]
+    features_to_be_removed=["patient_id", "lesion_id", "img_id" , "modelo_name", "diagnostic_ACK" , "diagnostic_BCC", "diagnostic_MEL", "diagnostic_NEV", "diagnostic_SCC", "diagnostic_SEK", target_column]
     main(dataset, features_to_be_removed, target_column)

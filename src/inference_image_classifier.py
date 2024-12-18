@@ -8,7 +8,8 @@ sys.path.insert(0,_CONFIG['raug_full_path'])
 from raug.checkpoints import save_model_as_onnx, load_model
 from raug.eval import test_single_input
 from raug.models.resnet import MyResnet
-
+from raug.models.mobilenet import MyMobilenet
+from raug.models.load_model import set_model
 import pandas as pd
 import torch
 import torch.nn.functional as F
@@ -29,12 +30,13 @@ class MODEL_INFERENCE():
         self.model_folder_path = model_folder_path
         self.size_image = size_image
         self.device = "cpu" # torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.class_names=class_names
         self.model = self.load_model()  # Carregar o modelo
         self.metadata_csv_folder_path = metadata_csv_folder_path
         self.images_folder_path = images_folder_path
         self.csv_results_folder_destination = csv_results_folder_destination
         self.csv_results_train_and_test_data = csv_results_train_and_test_data
-        self.class_names=class_names
+        
         
     def load_model(self):
         try:
@@ -50,7 +52,11 @@ class MODEL_INFERENCE():
                 return ort_session
             # Caso não seja, o formato será o padrão
             ## Usar o raug para importar o modelo
-            model=MyResnet(torchvision.models.resnet50(weights=None), 6, 0, 2048,
+            if self.model_name=="resnet-50":
+                model=MyResnet(torchvision.models.resnet50(weights=None), 6, 0, 2048,
+                         comb_method=None, comb_config=None)
+            else:
+               model = MyMobilenet(torchvision.models.mobilenet_v2(weights=True), len(self.class_names), 0, False,
                          comb_method=None, comb_config=None)
             loaded_model = load_model(self.model_folder_path, model)
             
@@ -119,7 +125,7 @@ class MODEL_INFERENCE():
             result_file_path = os.path.join(self.csv_results_folder_destination, f"inference_model_{self.model_name}.csv")
             
             if not os.path.exists(result_file_path):
-                df = pd.DataFrame(columns=['modelo_name', 'img_id', f'class_name_{self.class_names[0]}', f'class_name_{self.class_names[1]}', f'class_name_{self.class_names[2]}', f'class_name_{self.class_names[3]}', f'class_name_{self.class_names[4]}', f'class_name_{self.class_names[5]}'])
+                df = pd.DataFrame(columns=['modelo_name', 'img_id', f'diagnostic_{self.class_names[0]}', f'diagnostic_{self.class_names[1]}', f'diagnostic_{self.class_names[2]}', f'diagnostic_{self.class_names[3]}', f'diagnostic_{self.class_names[4]}', f'diagnostic_{self.class_names[5]}'])
             else:
                 df = pd.read_csv(result_file_path)
 
@@ -127,7 +133,7 @@ class MODEL_INFERENCE():
             new_rows = []  # Lista para armazenar as novas linhas
             #for class_name, prob in zip(self.class_names, prediction_probabilities):
             # Criar a linha com a predição e probabilidade
-            new_rows.append({'modelo_name': str(self.model_name), 'img_id': image_name, f'class_name_{self.class_names[0]}': prediction_probabilities[0], f'class_name_{self.class_names[1]}': prediction_probabilities[1], f'class_name_{self.class_names[2]}': prediction_probabilities[2], f'class_name_{self.class_names[3]}': prediction_probabilities[3], f'class_name_{self.class_names[4]}': prediction_probabilities[4], f'class_name_{self.class_names[5]}': prediction_probabilities[5]})
+            new_rows.append({'modelo_name': str(self.model_name), 'img_id': image_name, f'diagnostic_{self.class_names[0]}': prediction_probabilities[0], f'diagnostic_{self.class_names[1]}': prediction_probabilities[1], f'diagnostic_{self.class_names[2]}': prediction_probabilities[2], f'diagnostic_{self.class_names[3]}': prediction_probabilities[3], f'diagnostic_{self.class_names[4]}': prediction_probabilities[4], f'diagnostic_{self.class_names[5]}': prediction_probabilities[5]})
 
             # Concatenar as novas linhas ao DataFrame existente
             new_rows_df = pd.DataFrame(new_rows)  # Converte as novas linhas em um DataFrame
@@ -203,7 +209,7 @@ class MODEL_INFERENCE():
             final_result = pd.merge(result, dataset_pad_20_one_hot_encoded_result, on="img_id", how="inner")
 
             # Salvar o dataset concatenado
-            merged_file_path = os.path.join(self.csv_results_folder_destination, "merged_metadata.csv")
+            merged_file_path = os.path.join(self.csv_results_folder_destination, f"merged_metadata_{self.model_name}.csv")
             final_result.to_csv(merged_file_path, index=False)
             print(f"Dados concatenados e salvos em {merged_file_path}")
             return merged_file_path
@@ -215,18 +221,18 @@ class MODEL_INFERENCE():
 
 if __name__=="__main__":
     pipeline = MODEL_INFERENCE(
-        model_name = "resnet-50",
-        model_format_type = "pt",
+        model_name = "mobilenet-v2",
+        model_format_type = "pth",
         size_image = (224, 224),
         class_names = ["ACK", "BCC", "MEL", "NEV", "SCC", "SEK"],
         metadata_csv_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/metadata.csv", # Caminho de onde está o metadado
         images_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/data/images",  # Pasta com as imagens do dataset
-        model_folder_path="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/resnet-50_None_folder_1_1734101683121366/best-checkpoint/best-checkpoint.pth", #"/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobile-net-cv-p5/1-mobilenet.onnx", # Caminho do modelo a ser usado
+        model_folder_path= "/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobilenet_None_folder_1_1734549815747918/best-checkpoint/best-checkpoint.pth", # "/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/resnet-50_None_folder_1_1734101683121366/best-checkpoint/best-checkpoint.pth", #"/home/wyctor/PROJETOS/pad_ufes_20_eda/src/weights/mobile-net-cv-p5/1-mobilenet.onnx", # Caminho do modelo a ser usado
         csv_results_folder_destination="/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/", # Onde o arquivo com os resultados das inferências será salvo
         csv_results_train_and_test_data = "/home/wyctor/PROJETOS/pad_ufes_20_eda/data/pad-ufes-20_folders_one_hot.csv"
     )
     # Processamento das imagens
-    ## pipeline.process_image()
+    pipeline.process_image()
     # Concatenar os datasets
     pipeline.concat_dataset()
     #pipeline.treat_one_hot_encoded()
