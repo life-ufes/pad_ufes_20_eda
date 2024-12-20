@@ -51,10 +51,10 @@ def main(dataset, features_to_be_removed, target):
 
 if __name__=="__main__":
     # Load the dataset
-    file_path = '/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/merged_metadata.csv'
+    file_path = '/home/wyctor/PROJETOS/pad_ufes_20_eda/src/results/inference-results/merged_metadata_mobilenet-v2.csv'
     dataset = pd.read_csv(file_path)
     # Features a serem desconsideradas
     # Definir qual a feature a ser predita e quais não serão usadas
     target_column = "diagnostic"
-    features_to_be_removed=["patient_id", "lesion_id", "img_id" , "modelo_name", "diagnostic_ACK" , "diagnostic_BCC", "diagnostic_MEL", "diagnostic_NEV", "diagnostic_SCC", "diagnostic_SEK", target_column]
+    features_to_be_removed=["patient_id", "lesion_id", "img_id" , "modelo_name", target_column]
     main(dataset, features_to_be_removed, target_column)
